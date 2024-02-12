@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:7.2.4-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - .docker/redis:/var/lib/redis
+      - .docker/redis-config:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD=my-password
+      - REDIS_PORT=6379
