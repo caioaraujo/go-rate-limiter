@@ -10,5 +10,4 @@ services:
       - .docker/redis:/var/lib/redis
       - .docker/redis-config:/usr/local/etc/redis/redis.conf
     environment:
-      - REDIS_PASSWORD=my-password
       - REDIS_PORT=6379
