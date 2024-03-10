@@ -19,5 +19,11 @@ As configurações são definidas em variáveis em ambiente da seguinte forma:
 
 Nota: As configurações podem ser feitas localmente no arquivo `.env` na raíz do projeto.
 
+### Configuração Redis
+O sistema de cache utilizado nessa aplicação é o Redis. Para subir o servidor localmente, basta executar o docker-compose:
+```
+docker-compose up -d
+```
+
 ## Execução do web server
 Na raíz do projeto, execute `go run cmd/system/main.go`
