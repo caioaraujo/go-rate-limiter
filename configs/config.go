@@ -8,8 +8,6 @@ type conf struct {
 	MaxReqPermitidas string `mapstructure:"MAX_REQ_PERMITIDAS"`
 	TempoBloqueioSec string `mapstructure:"TEMPO_BLOQUEIO_SEC"`
 	MetodoBloqueio   string `mapstructure:"METODO_BLOQUEIO"`
-	RedisPassword    string `mapstructure:"REDIS_PASSWORD"`
-	RedisPort        string `mapstructure:"REDIS_PORT"`
 }
 
 func LoadConfig(path string) (*conf, error) {

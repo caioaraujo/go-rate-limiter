@@ -2,30 +2,30 @@ package cache
 
 import (
 	"context"
+	"time"
+
 	"github.com/redis/go-redis/v9"
 )
 
-var ctx = context.Background()
-
-func Set(key, value string) error {
-	client := GetClient()
-	err := client.Set(ctx, key, value, 0).Err()
+func Set(client *redis.Client, key, value string, expiration time.Duration) error {
+	var ctx = context.Background()
+	err := client.Set(ctx, key, value, expiration).Err()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Get(value string) (string, error) {
-	client := GetClient()
-	value, err := client.Get(ctx, "key").Result()
+func Get(client *redis.Client, value string) (string, error) {
+	var ctx = context.Background()
+	value, err := client.Get(ctx, value).Result()
 	if err != nil {
 		return "", err
 	}
 	return value, nil
 }
 
-func GetClient() *redis.Client {
+func Connect() *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",

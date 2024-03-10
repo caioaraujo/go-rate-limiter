@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/caioaraujo/go-rate-limiter/configs"
 	"github.com/caioaraujo/go-rate-limiter/internal/infra/cache"
 	"github.com/caioaraujo/go-rate-limiter/internal/infra/web/webserver"
-	"net/http"
 )
 
 func main() {
@@ -13,15 +14,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = cache.Set("MAX_REQ_PERM", configs.MaxReqPermitidas)
+	client := cache.Connect()
+	err = cache.Set(client, "MAX_REQ_PERM", configs.MaxReqPermitidas, 0)
 	if err != nil {
 		panic(err)
 	}
-	err = cache.Set("MET_BLOQUEIO", configs.MetodoBloqueio)
+	err = cache.Set(client, "MET_BLOQUEIO", configs.MetodoBloqueio, 0)
 	if err != nil {
 		panic(err)
 	}
-	err = cache.Set("TEMPO_BLOQUEIO", configs.TempoBloqueioSec)
+	err = cache.Set(client, "TEMPO_BLOQUEIO", configs.TempoBloqueioSec, 0)
 	if err != nil {
 		panic(err)
 	}
