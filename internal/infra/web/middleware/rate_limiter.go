@@ -8,27 +8,43 @@ import (
 
 	"github.com/caioaraujo/go-rate-limiter/internal/infra/cache"
 
-	"golang.org/x/time/rate"
-
 	"encoding/json"
 	"net/http"
 )
 
 func RateLimiter(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
-	maxReqAllowed := getIntFromCache("MAX_REQ_PERM")
+	type userInfo struct {
+		timesVisit int
+		lastSeen   time.Time
+	}
+	var (
+		users   = make(map[string]*userInfo)
+		message = "you have reached the maximum number of requests or actions allowed within a certain time frame"
+	)
+
 	tempoBloqueio := getIntFromCache("TEMPO_BLOQUEIO")
+	maxReqAllowed := getIntFromCache("MAX_REQ_PERM")
 	metodoBloqueio := getStringFromCache("MET_BLOQUEIO")
 
-	limiter := rate.NewLimiter(1, maxReqAllowed)
+	for key, user := range users {
+		if time.Since(user.lastSeen) > time.Duration(tempoBloqueio)*time.Second {
+			delete(users, key)
+		}
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		currentToken := r.Header.Get("API_KEY")
-		currentIP := getUserIP(r)
+		key := ""
+		if metodoBloqueio == "IP" {
+			key = getUserIP(r)
+		} else if metodoBloqueio == "TOKEN" {
+			key = r.Header.Get("API_KEY")
+		} else {
+			panic("Valor nao permitido para metodo de bloqueio!")
+		}
 
-		isBlocked := isUserBlocked(currentIP, currentToken, metodoBloqueio)
+		isBlocked := isUserBlocked(key)
 
 		if isBlocked {
-			message := "you have reached the maximum number of requests or actions allowed within a certain time frame"
 			w.WriteHeader(http.StatusTooManyRequests)
 			err := json.NewEncoder(w).Encode(&message)
 			if err != nil {
@@ -37,48 +53,47 @@ func RateLimiter(next func(w http.ResponseWriter, r *http.Request)) http.Handler
 			return
 		}
 
-		if !limiter.Allow() {
-			message := "you have reached the maximum number of requests or actions allowed within a certain time frame"
-			w.WriteHeader(http.StatusTooManyRequests)
-			err := json.NewEncoder(w).Encode(&message)
-			if err != nil {
-				panic(err)
-			}
-			setUserLimit(currentIP, currentToken, metodoBloqueio, tempoBloqueio)
-			return
+		if currentInfo, ok := users[key]; !ok {
+			users[key] = &userInfo{timesVisit: 1, lastSeen: time.Now()}
 		} else {
-			next(w, r)
+			if time.Since(currentInfo.lastSeen) > time.Duration(tempoBloqueio)*time.Second {
+				users[key] = &userInfo{timesVisit: 1, lastSeen: time.Now()}
+				next(w, r)
+			}
+			currentInfo.timesVisit += 1
+			if currentInfo.timesVisit > maxReqAllowed {
+				blockUser(key, tempoBloqueio)
+				delete(users, key)
+				w.WriteHeader(http.StatusTooManyRequests)
+				err := json.NewEncoder(w).Encode(&message)
+				if err != nil {
+					panic(err)
+				}
+				return
+			}
 		}
+
+		next(w, r)
+
 	})
 }
 
-func isUserBlocked(ip, token, blockMethod string) bool {
+func isUserBlocked(key string) bool {
 	var currentBlockedUser string
-	if blockMethod == "IP" {
-		currentBlockedUser = getStringFromCache(ip)
-	} else if blockMethod == "TOKEN" {
-		currentBlockedUser = getStringFromCache(token)
-	} else {
-		panic("Método de bloqueio não configurado")
-	}
+	currentBlockedUser = getStringFromCache(key)
 	if currentBlockedUser == "1" {
 		return true
 	}
 	return false
 }
 
-func setUserLimit(ip, token, blockMethod string, timeLimit int) {
+func blockUser(key string, timeLimit int) {
 	limitSeconds := fmt.Sprintf("%ds", timeLimit)
 	duration, err := time.ParseDuration(limitSeconds)
 	if err != nil {
 		panic(err)
 	}
-	if blockMethod == "IP" {
-		setInCache(ip, "1", duration)
-	}
-	if blockMethod == "TOKEN" {
-		setInCache(token, "1", duration)
-	}
+	setInCache(key, "1", duration)
 }
 
 func getStringFromCache(key string) string {
