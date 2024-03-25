@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/caioaraujo/go-rate-limiter/internal/infra/cache"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRateLimiterBlockByMaxReqAllowed(t *testing.T) {
@@ -67,21 +67,33 @@ func TestRateLimiterBlockByIP(t *testing.T) {
 
 	// primeira requisicao deve passar
 	res, err := doRequest("X-Real-Ip", "192.168.222.2", svr)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	defer res.Body.Close()
 	assert.Equal(t, res.StatusCode, http.StatusOK)
 
 	// segunda requisicao deve passar
 	res2, err := doRequest("X-Real-Ip", "192.168.222.2", svr)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	defer res2.Body.Close()
 	assert.Equal(t, res2.StatusCode, http.StatusOK)
 
 	// terceira requisicao deve bloquear..
 	res3, err := doRequest("X-Real-Ip", "192.168.222.2", svr)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	assert.Equal(t, res3.StatusCode, http.StatusTooManyRequests)
 	defer res3.Body.Close()
 
 	// uma quarta requisicao, com outro IP, deve passar
 	res4, err := doRequest("X-Real-Ip", "0.0.0.0", svr)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	assert.Equal(t, res4.StatusCode, http.StatusOK)
 	defer res4.Body.Close()
 }
@@ -98,11 +110,17 @@ func TestRateLimiterBlockByToken(t *testing.T) {
 
 	// primeira requisicao deve passar
 	res1, err := doRequest("API_KEY", "abc123", svr)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	assert.Equal(t, res1.StatusCode, http.StatusOK)
 	defer res1.Body.Close()
 
 	// segunda requisicao deve passar
 	res2, err := doRequest("API_KEY", "abc123", svr)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	assert.Equal(t, res2.StatusCode, http.StatusOK)
 	defer res2.Body.Close()
 

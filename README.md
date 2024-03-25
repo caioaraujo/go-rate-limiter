@@ -27,3 +27,6 @@ docker-compose up -d
 
 ## Execução do web server
 Na raíz do projeto, execute `go run cmd/system/main.go`
+
+## Execução dos testes
+Na raíz do projeto, execute `go test ./...`
