@@ -22,17 +22,11 @@ func RateLimiter(next func(w http.ResponseWriter, r *http.Request)) http.Handler
 		message = "you have reached the maximum number of requests or actions allowed within a certain time frame"
 	)
 
-	tempoBloqueio := getIntFromCache("TEMPO_BLOQUEIO")
-	maxReqAllowed := getIntFromCache("MAX_REQ_PERM")
-	metodoBloqueio := getStringFromCache("MET_BLOQUEIO")
-
-	for key, user := range users {
-		if time.Since(user.lastSeen) > time.Duration(tempoBloqueio)*time.Second {
-			delete(users, key)
-		}
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tempoBloqueio := getIntFromCache("TEMPO_BLOQUEIO")
+		maxReqAllowed := getIntFromCache("MAX_REQ_PERM")
+		metodoBloqueio := getStringFromCache("MET_BLOQUEIO")
+
 		key := ""
 		if metodoBloqueio == "IP" {
 			key = getUserIP(r)
